@@ -1,0 +1,49 @@
+{
+  "common": {
+    "appName": "Factorize",
+    "localeEn": "English",
+    "localeEs": "Español",
+    "loading": "Loading…",
+    "submit": "Submit",
+    "back": "Back",
+    "error": "Something went wrong. Please try again."
+  },
+  "login": {
+    "title": "Welcome to Factorize",
+    "description": "Connect your Para wallet to log in or create an account.",
+    "connectButton": "Log in with Para",
+    "connectedAs": "Connected wallet",
+    "continueButton": "Continue",
+    "signUpPrompt": "Don't have an account?",
+    "signUpLink": "Sign up",
+    "notRegistered": "Wallet not registered. Please sign up first.",
+    "manageWallet": "Manage wallet"
+  },
+  "signUp": {
+    "title": "Create your account",
+    "description": "Connect your Para wallet and complete your profile.",
+    "connectWallet": "Connect wallet with Para",
+    "walletRequired": "Connect your wallet before signing up.",
+    "investor": "Investor",
+    "enterprise": "Enterprise",
+    "name": "Name",
+    "nameOptional": "Name (optional)",
+    "nameHint": "If left empty, your display name will be your wallet address.",
+    "companyName": "Company name",
+    "about": "About",
+    "ruc": "RUC",
+    "sector": "Sector",
+    "activity": "Activity",
+    "selectSector": "Select a sector",
+    "selectActivity": "Select an activity",
+    "alreadyRegistered": "This wallet is already registered.",
+    "loginLink": "Log in instead"
+  },
+  "invoices": {
+    "hello": "hello"
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidWallet": "Invalid wallet address."
+  }
+}

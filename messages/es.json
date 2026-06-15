@@ -1,0 +1,49 @@
+{
+  "common": {
+    "appName": "Factorize",
+    "localeEn": "English",
+    "localeEs": "Español",
+    "loading": "Cargando…",
+    "submit": "Enviar",
+    "back": "Volver",
+    "error": "Algo salió mal. Inténtalo de nuevo."
+  },
+  "login": {
+    "title": "Bienvenido a Factorize",
+    "description": "Conecta tu billetera Para para iniciar sesión o crear una cuenta.",
+    "connectButton": "Iniciar sesión con Para",
+    "connectedAs": "Billetera conectada",
+    "continueButton": "Continuar",
+    "signUpPrompt": "¿No tienes una cuenta?",
+    "signUpLink": "Regístrate",
+    "notRegistered": "Billetera no registrada. Por favor regístrate primero.",
+    "manageWallet": "Administrar billetera"
+  },
+  "signUp": {
+    "title": "Crea tu cuenta",
+    "description": "Conecta tu billetera Para y completa tu perfil.",
+    "connectWallet": "Conectar billetera con Para",
+    "walletRequired": "Conecta tu billetera antes de registrarte.",
+    "investor": "Inversor",
+    "enterprise": "Empresa",
+    "name": "Nombre",
+    "nameOptional": "Nombre (opcional)",
+    "nameHint": "Si lo dejas vacío, tu nombre será tu dirección de billetera.",
+    "companyName": "Nombre de la empresa",
+    "about": "Acerca de",
+    "ruc": "RUC",
+    "sector": "Sector",
+    "activity": "Actividad",
+    "selectSector": "Selecciona un sector",
+    "selectActivity": "Selecciona una actividad",
+    "alreadyRegistered": "Esta billetera ya está registrada.",
+    "loginLink": "Inicia sesión"
+  },
+  "invoices": {
+    "hello": "hola"
+  },
+  "validation": {
+    "required": "Este campo es obligatorio.",
+    "invalidWallet": "Dirección de billetera inválida."
+  }
+}
