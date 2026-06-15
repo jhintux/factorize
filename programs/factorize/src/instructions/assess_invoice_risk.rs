@@ -3,12 +3,12 @@ use anchor_lang::prelude::*;
 use crate::{errors::FactorizeError, state::{lifecycle, InvoiceStatus, InvoiceVault}};
 
 #[derive(Accounts)]
-#[instruction(invoice_id: String)]
+#[instruction(_invoice_id: String)]
 pub struct AssessInvoiceRisk<'info> {
     pub analyst: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"invoice_vault", invoice_vault.sme.as_ref(), invoice_id.as_bytes()],
+        seeds = [b"invoice_vault", invoice_vault.sme.as_ref(), _invoice_id.as_bytes()],
         bump = invoice_vault.bump
     )]
     pub invoice_vault: Account<'info, InvoiceVault>,
