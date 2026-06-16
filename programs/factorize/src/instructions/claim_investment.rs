@@ -11,7 +11,7 @@ use anchor_spl::{
 use crate::{
     errors::FactorizeError,
     math::Calculator,
-    state::{lifecycle, InvoiceStatus, InvoiceVault},
+    state::{lifecycle, Config, InvoiceStatus, InvoiceVault},
 };
 
 #[derive(Accounts)]
@@ -52,9 +52,14 @@ pub struct ClaimInvestment<'info> {
         seeds = [b"shares", invoice_vault.sme.as_ref(), _invoice_id.as_bytes()],
         bump
     )]
-    pub shares: InterfaceAccount<'info, Mint>,
-    #[account(constraint = usdc_mint.is_initialized == true)]
+    pub shares: Box<InterfaceAccount<'info, Mint>>,
+    #[account(
+        constraint = usdc_mint.key() == config.usdc_mint @ FactorizeError::InvalidMint,
+        constraint = usdc_mint.is_initialized == true
+    )]
     pub usdc_mint: InterfaceAccount<'info, Mint>,
+    #[account(seeds = [b"config"], bump)]
+    pub config: Box<Account<'info, Config>>,
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,

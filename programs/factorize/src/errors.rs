@@ -34,4 +34,10 @@ pub enum FactorizeError {
     NotAssessed,
     #[msg("Invoice funding period has ended")]
     FundingPeriodEnded,
+    #[msg("Protocol is paused")]
+    Paused,
+    #[msg("Invalid USDC mint")]
+    InvalidMint,
+    #[msg("Analyst is not whitelisted")]
+    AnalystNotWhitelisted,
 }

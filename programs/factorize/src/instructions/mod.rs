@@ -6,6 +6,9 @@ pub mod claim_investment;
 pub mod settle_invoice;
 pub mod claim_invoice;
 pub mod sync_invoice_status;
+pub mod add_analyst;
+pub mod remove_analyst;
+pub mod set_paused;
 
 pub use init_config::*;
 pub use init_invoice_vault::*;
@@ -15,3 +18,6 @@ pub use claim_investment::*;
 pub use settle_invoice::*;
 pub use claim_invoice::*;
 pub use sync_invoice_status::*;
+pub use add_analyst::*;
+pub use remove_analyst::*;
+pub use set_paused::*;

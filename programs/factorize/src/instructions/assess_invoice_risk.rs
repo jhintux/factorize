@@ -1,22 +1,33 @@
 use anchor_lang::prelude::*;
 
-use crate::{errors::FactorizeError, state::{lifecycle, InvoiceStatus, InvoiceVault}};
+use crate::{
+    errors::FactorizeError,
+    state::{lifecycle, AnalystWhitelist, Config, InvoiceStatus, InvoiceVault},
+};
 
 #[derive(Accounts)]
 #[instruction(_invoice_id: String)]
 pub struct AssessInvoiceRisk<'info> {
     pub analyst: Signer<'info>,
     #[account(
+        seeds = [b"analyst", analyst.key().as_ref()],
+        bump = analyst_whitelist.bump,
+    )]
+    pub analyst_whitelist: Account<'info, AnalystWhitelist>,
+    #[account(
         mut,
         seeds = [b"invoice_vault", invoice_vault.sme.as_ref(), _invoice_id.as_bytes()],
         bump = invoice_vault.bump
     )]
     pub invoice_vault: Account<'info, InvoiceVault>,
+    #[account(seeds = [b"config"], bump)]
+    pub config: Account<'info, Config>,
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> AssessInvoiceRisk<'info> {
     pub fn assess_invoice_risk(&mut self, _invoice_id: String, invoice_hash: [u8; 32]) -> Result<()> {
+        self.config.require_not_paused()?;
         require_keys_eq!(self.invoice_vault.analyst, Pubkey::default(), FactorizeError::AlreadyAssessed);
 
         let now = lifecycle::now()?;

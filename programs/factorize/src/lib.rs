@@ -17,9 +17,10 @@ pub mod factorize {
     pub fn init_config(
         ctx: Context<InitConfig>,
         treasury: Pubkey,
+        usdc_mint: Pubkey,
         protocol_fee_bps: u16,
     ) -> Result<()> {
-        ctx.accounts.init_config(treasury, protocol_fee_bps, &ctx.bumps)
+        ctx.accounts.init_config(treasury, usdc_mint, protocol_fee_bps, &ctx.bumps)
     }
 
     pub fn init_invoice_vault(
@@ -51,5 +52,17 @@ pub mod factorize {
 
     pub fn sync_invoice_status(ctx: Context<SyncInvoiceStatus>, _invoice_id: String) -> Result<()> {
         ctx.accounts.sync_invoice_status()
+    }
+
+    pub fn add_analyst(ctx: Context<AddAnalyst>) -> Result<()> {
+        ctx.accounts.add_analyst(&ctx.bumps)
+    }
+
+    pub fn remove_analyst(ctx: Context<RemoveAnalyst>) -> Result<()> {
+        ctx.accounts.remove_analyst()
+    }
+
+    pub fn set_paused(ctx: Context<SetPaused>, paused: bool) -> Result<()> {
+        ctx.accounts.set_paused(paused)
     }
 }

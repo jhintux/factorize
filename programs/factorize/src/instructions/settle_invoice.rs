@@ -10,7 +10,10 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(_invoice_id: String)]
 pub struct SettleInvoice<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = sme.key() == invoice_vault.sme @ FactorizeError::Unauthorized
+    )]
     pub sme: Signer<'info>,
     #[account(
         mut,
@@ -44,7 +47,10 @@ pub struct SettleInvoice<'info> {
         bump
     )]
     pub shares: Box<InterfaceAccount<'info, Mint>>,
-    #[account(constraint = usdc_mint.is_initialized == true)]
+    #[account(
+        constraint = usdc_mint.key() == config.usdc_mint @ FactorizeError::InvalidMint,
+        constraint = usdc_mint.is_initialized == true
+    )]
     pub usdc_mint: InterfaceAccount<'info, Mint>,
     #[account(seeds = [b"config"], bump)]
     pub config: Box<Account<'info, Config>>,
@@ -56,11 +62,7 @@ pub struct SettleInvoice<'info> {
 
 impl<'info> SettleInvoice<'info> {
     pub fn settle_invoice(&mut self, _invoice_id: String, repayment_amount: u64) -> Result<()> {
-        require_keys_eq!(
-            self.sme.key(),
-            self.invoice_vault.sme,
-            FactorizeError::Unauthorized
-        );
+        self.config.require_not_paused()?;
 
         let now = lifecycle::now()?;
         lifecycle::sync_invoice_status(&mut self.invoice_vault, now);

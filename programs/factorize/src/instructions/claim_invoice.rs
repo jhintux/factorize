@@ -6,13 +6,16 @@ use anchor_spl::{
 
 use crate::{
     errors::FactorizeError,
-    state::{lifecycle, InvoiceStatus, InvoiceVault},
+    state::{lifecycle, Config, InvoiceStatus, InvoiceVault},
 };
 
 #[derive(Accounts)]
 #[instruction(_invoice_id: String)]
 pub struct ClaimInvoice<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = sme.key() == invoice_vault.sme @ FactorizeError::Unauthorized
+    )]
     pub sme: Signer<'info>,
     #[account(
         mut,
@@ -34,8 +37,13 @@ pub struct ClaimInvoice<'info> {
         associated_token::token_program = token_program,
     )]
     pub invoice_vault_ata: InterfaceAccount<'info, TokenAccount>,
-    #[account(constraint = usdc_mint.is_initialized == true)]
+    #[account(
+        constraint = usdc_mint.key() == config.usdc_mint @ FactorizeError::InvalidMint,
+        constraint = usdc_mint.is_initialized == true
+    )]
     pub usdc_mint: InterfaceAccount<'info, Mint>,
+    #[account(seeds = [b"config"], bump)]
+    pub config: Account<'info, Config>,
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -43,11 +51,7 @@ pub struct ClaimInvoice<'info> {
 
 impl<'info> ClaimInvoice<'info> {
     pub fn claim_invoice(&mut self, _invoice_id: String) -> Result<()> {
-        require_keys_eq!(
-            self.sme.key(),
-            self.invoice_vault.sme,
-            FactorizeError::Unauthorized
-        );
+        self.config.require_not_paused()?;
 
         let now = lifecycle::now()?;
         lifecycle::sync_invoice_status(&mut self.invoice_vault, now);

@@ -4,7 +4,10 @@ use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
-use crate::state::{InvoiceStatus, InvoiceVault, InvoiceVaultProps};
+use crate::{
+    errors::FactorizeError,
+    state::{Config, InvoiceStatus, InvoiceVault, InvoiceVaultProps},
+};
 
 #[derive(Accounts)]
 #[instruction(props: InvoiceVaultProps)]
@@ -36,8 +39,13 @@ pub struct InitInvoiceVault<'info> {
         associated_token::token_program = token_program,
     )]
     pub invoice_vault_ata: InterfaceAccount<'info, TokenAccount>,
-    #[account(constraint = usdc_mint.is_initialized == true)]
+    #[account(
+        constraint = usdc_mint.key() == config.usdc_mint @ FactorizeError::InvalidMint,
+        constraint = usdc_mint.is_initialized == true
+    )]
     pub usdc_mint: InterfaceAccount<'info, Mint>,
+    #[account(seeds = [b"config"], bump)]
+    pub config: Account<'info, Config>,
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -49,6 +57,8 @@ impl<'info> InitInvoiceVault<'info> {
         props: InvoiceVaultProps,
         bump: &InitInvoiceVaultBumps,
     ) -> Result<()> {
+        self.config.require_not_paused()?;
+
         self.invoice_vault.set_inner(InvoiceVault {
             advance_amount: props.advance_amount,
             funding_amount: 0,
