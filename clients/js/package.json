@@ -1,0 +1,20 @@
+{
+  "name": "@factorize/sdk",
+  "version": "0.1.0",
+  "description": "Factorize SDK",
+  "main": "./src/generated/index.ts",
+  "types": "./src/generated/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/generated/index.ts",
+      "import": "./src/generated/index.ts",
+      "default": "./src/generated/index.ts"
+    }
+  },
+  "peerDependencies": {
+    "@solana/kit": "^6.4.0"
+  },
+  "dependencies": {
+    "@solana/program-client-core": "^6.4.0"
+  }
+}
