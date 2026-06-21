@@ -8,6 +8,7 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: 10 * 1024 * 1024,
     },
+    transpilePackages: ["@factorize/sdk"],
   },
   allowedDevOrigins: ['*.ngrok-free.app']
 };

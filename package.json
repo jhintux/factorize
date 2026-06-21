@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "yarn workspace @factorize/sdk build && next build",
     "start": "next start",
     "test:anchor": "yarn workspace @factorize/program-tests test",
     "generate:sdk": "cp target/idl/factorize.json lib/factorize/idl.json && cp target/idl/factorize.json supabase/functions/_shared/idl.json && npx codama run js && yarn workspace @factorize/sdk build",
