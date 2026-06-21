@@ -11,4 +11,4 @@ test-ledger
 .env.development.local
 .env.production.local
 .env.test.local
-supabase/.temp
+clients/js/dist

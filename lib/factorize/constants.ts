@@ -9,6 +9,9 @@ export const FACTORIZE_PROGRAM_ID = address(
 export const USDC_DECIMALS = 6;
 export const ONE_USDC = 10n ** BigInt(USDC_DECIMALS);
 
+/** Seconds before on-chain settle_date to fire settle_invoice (validator clock). */
+export const DEMO_SETTLE_MARGIN_SEC = 60;
+
 export const ASSOCIATED_TOKEN_PROGRAM_ADDRESS = address(
   "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
 );

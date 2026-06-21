@@ -1,9 +1,21 @@
 "use client";
 
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
+import { ThemeProvider } from "next-themes";
 
 export default function ChakraUIProvider({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return <ChakraProvider value={defaultSystem}>{children}</ChakraProvider>;
+  return (
+    <ChakraProvider value={defaultSystem}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem={false}
+        disableTransitionOnChange
+      >
+        {children}
+      </ThemeProvider>
+    </ChakraProvider>
+  );
 }

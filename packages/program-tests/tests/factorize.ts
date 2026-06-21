@@ -8,6 +8,7 @@ import { signer } from "@solana/kit-plugin-signer";
 import { litesvm, litesvmAirdrop } from "@solana/kit-plugin-litesvm";
 import { tokenProgram } from "@solana-program/token";
 import { factorizeProgram, FACTORIZE_PROGRAM_ADDRESS } from "@factorize/sdk";
+import { FeatureSet } from "litesvm";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -23,6 +24,7 @@ export async function client() {
     .use(factorizeProgram());
 
   testClient.svm
+    .withFeatureSet(FeatureSet.allEnabled())
     .withSigverify(false)
     .withBlockhashCheck(false)
     .withSysvars()
@@ -30,7 +32,7 @@ export async function client() {
     .withDefaultPrograms();
 
   const programId = FACTORIZE_PROGRAM_ADDRESS as Address;
-  const soPath = path.resolve(__dirname, "../target/deploy/factorize.so");
+  const soPath = path.resolve(__dirname, "../../../target/deploy/factorize.so");
 
   if (!fs.existsSync(soPath)) {
     throw new Error(

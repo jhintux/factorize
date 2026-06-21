@@ -4,6 +4,10 @@ Factorize is an RWA protocol that lets investors earn yield on receivables from 
 
 The APY comes from the discount at which SMEs sell their receivables when they need immediate liquidity.
 
+| Devnet |
+|--------|
+| `6YWgPX8CbreGMdPAkCnXxLG5xW9T8LiTQHqafP3C3GhT` |
+
 ## On-chain accounts
 
 | Account | PDA seeds | Description |
@@ -250,12 +254,16 @@ yarn dev                  # Next.js app
 
 After any on-chain change, always run `anchor build && yarn generate:sdk` before testing or deploying the app. The canonical IDL is `target/idl/factorize.json`; `yarn generate:sdk` copies it to `lib/factorize/idl.json` and `supabase/functions/_shared/idl.json`, then regenerates the TypeScript client.
 
-**SDK and IDL sync.** `@factorize/sdk` is a local `file:clients/js` dependency. Codama output lives in `clients/js`; `postinstall` copies it into `node_modules/@factorize/sdk`. If you regenerate the client without reinstalling, run `yarn install` (or rely on `postinstall` after a fresh install). A stale IDL/SDK mismatch causes on-chain account validation failures (e.g. Anchor error `#3008` / `ConstraintProgramId`) when instruction account lists drift from the deployed program.
+**SDK and IDL sync.** `@factorize/sdk` lives in `clients/js` and is consumed as prebuilt output from `clients/js/dist/` — the Next.js app does not compile or typecheck anything under `clients/`. Run `yarn generate:sdk` after IDL changes; it regenerates Codama output and runs `yarn workspace @factorize/sdk build` to refresh `dist/`. `postinstall` rebuilds and copies the package into `node_modules/@factorize/sdk`.
 
-**Tests.** Integration tests use Mocha 11 with `tsx` (not `ts-mocha`), which is compatible with Node 26 and the Next.js TypeScript setup. Test config is in `tsconfig.test.json` (CommonJS); the app uses `tsconfig.json` (ESM/bundler). Tests load `target/deploy/factorize.so` via LiteSVM — run `anchor build` first if the binary is missing or outdated.
+**Tests.** On-chain integration tests live in `packages/program-tests/tests/` and run from the isolated workspace package `@factorize/program-tests`. That package owns LiteSVM, Mocha, and its own `@solana/kit` version so test tooling does not conflict with the Next.js app dependencies. Test config is in `packages/program-tests/tsconfig.json` (CommonJS); the app uses root `tsconfig.json` (ESM/bundler). Tests load `target/deploy/factorize.so` via LiteSVM — run `anchor build` first if the binary is missing or outdated.
 
 Register the Helius webhook after deploying the edge function:
 
 ```bash
 node scripts/register-helius-webhook.mjs
 ```
+
+## Tests passing 
+![Test Part 1](./packages/program-tests/test-1.png)
+![Test Part 2](./packages/program-tests/test-2.png)

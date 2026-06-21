@@ -2,13 +2,17 @@
   "name": "@factorize/sdk",
   "version": "0.1.0",
   "description": "Factorize SDK",
-  "main": "./src/generated/index.ts",
-  "types": "./src/generated/index.ts",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json --noCheck"
+  },
+  "main": "./dist/generated/index.js",
+  "types": "./dist/generated/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/generated/index.ts",
-      "import": "./src/generated/index.ts",
-      "default": "./src/generated/index.ts"
+      "types": "./dist/generated/index.d.ts",
+      "import": "./dist/generated/index.js",
+      "default": "./dist/generated/index.js"
     }
   },
   "peerDependencies": {

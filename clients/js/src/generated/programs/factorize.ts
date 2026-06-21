@@ -602,6 +602,6 @@ export function factorizeProgram() {
           analystWhitelist: findAnalystWhitelistPda,
         },
       },
-    });
+    }) as Omit<T, "factorize"> & { factorize: FactorizePlugin };
   };
 }

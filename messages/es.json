@@ -45,6 +45,17 @@
     "loginLink": "Inicia sesión"
   },
   "invoices": {
+    "hello": "Explora oportunidades de inversión en facturas",
+    "title": "Facturas disponibles",
+    "navInvoices": "Facturas",
+    "navInvestments": "Mis inversiones",
+    "enterprise": "Empresa",
+    "status": "Estado",
+    "loginRequired": "Inicia sesión para ver tus inversiones.",
+    "tabDetail": "Detalles de la factura",
+    "tabCompany": "Empresa pagadora",
+    "operationType": "Tipo de operación",
+    "collectionDate": "Fecha de cobro",
     "empty": "Aún no hay facturas disponibles.",
     "funded": "financiado",
     "availableSoon": "La inversión se habilita tras la evaluación de riesgo",

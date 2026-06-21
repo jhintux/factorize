@@ -72,6 +72,40 @@ export async function sendInstruction({
   return sendSignedProgramTransactionMessage(rpc, transactionMessage);
 }
 
+/** Simulate first, then send immediately — minimizes latency after time-sensitive waits. */
+export async function simulateThenSendInstruction({
+  rpc,
+  signer,
+  instruction,
+}: SendInstructionParams): Promise<string> {
+  const transactionMessage = await buildProgramTransactionMessage({
+    rpc,
+    signer,
+    instruction,
+  });
+
+  const signedTransaction =
+    await signTransactionMessageWithSigners(transactionMessage);
+  const wireTx = getBase64EncodedWireTransaction(signedTransaction);
+
+  const { value: simulation } = await rpc
+    .simulateTransaction(wireTx, {
+      encoding: "base64",
+      sigVerify: false,
+      replaceRecentBlockhash: true,
+    })
+    .send();
+
+  if (simulation.err) {
+    const logs = simulation.logs?.join("\n") ?? "";
+    throw new Error(
+      `Simulation failed: ${JSON.stringify(simulation.err)}${logs ? `\n${logs}` : ""}`,
+    );
+  }
+
+  return sendSignedProgramTransactionMessage(rpc, transactionMessage);
+}
+
 export async function sendSignedProgramTransactionMessage(
   rpc: Rpc<SolanaRpcApi>,
   transactionMessage: Awaited<ReturnType<typeof buildProgramTransactionMessage>>,

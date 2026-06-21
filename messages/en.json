@@ -45,6 +45,17 @@
     "loginLink": "Log in instead"
   },
   "invoices": {
+    "hello": "Browse invoice opportunities",
+    "title": "Available invoices",
+    "navInvoices": "Invoices",
+    "navInvestments": "My investments",
+    "enterprise": "Enterprise",
+    "status": "Status",
+    "loginRequired": "Log in to view your investments.",
+    "tabDetail": "Invoice details",
+    "tabCompany": "Payer company",
+    "operationType": "Operation type",
+    "collectionDate": "Collection date",
     "empty": "No invoices available yet.",
     "funded": "funded",
     "availableSoon": "Funding opens after risk assessment",

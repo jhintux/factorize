@@ -25,6 +25,14 @@ function hasSession(request: NextRequest): boolean {
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/demo", request.url));
+  }
+
+  if (pathname === "/demo" || pathname.startsWith("/demo/")) {
+    return NextResponse.next();
+  }
+
   if (isProtectedPath(pathname) && !hasSession(request)) {
     const locale = pathname.split("/")[1] ?? defaultLocale;
     return NextResponse.redirect(new URL(`/${locale}`, request.url));
