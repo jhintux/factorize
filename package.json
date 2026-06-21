@@ -15,7 +15,7 @@
     "start": "next start",
     "test:anchor": "yarn workspace @factorize/program-tests test",
     "generate:sdk": "cp target/idl/factorize.json lib/factorize/idl.json && cp target/idl/factorize.json supabase/functions/_shared/idl.json && npx codama run js && yarn workspace @factorize/sdk build",
-    "postinstall": "yarn workspace @factorize/sdk build 2>/dev/null; cp -R clients/js node_modules/@factorize/sdk 2>/dev/null || true",
+    "postinstall": "yarn workspace @factorize/sdk build",
     "init:config": "tsx scripts/init-config.ts",
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
@@ -31,7 +31,7 @@
     "@cosmjs/proto-signing": "^0.39.0",
     "@cosmjs/stargate": "^0.39.0",
     "@cosmjs/tendermint-rpc": "^0.39.0",
-    "@factorize/sdk": "file:clients/js",
+    "@factorize/sdk": "0.1.0",
     "@farcaster/mini-app-solana": "^2.0.0",
     "@farcaster/miniapp-sdk": "^0.3.0",
     "@farcaster/miniapp-wagmi-connector": "^2.0.0",
