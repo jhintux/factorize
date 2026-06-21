@@ -3,6 +3,7 @@ use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TokenInt
 
 use crate::{
     errors::FactorizeError,
+    events::InvoiceSettled,
     math::Calculator,
     state::{lifecycle, Config, InvoiceStatus, InvoiceVault},
 };
@@ -61,7 +62,7 @@ pub struct SettleInvoice<'info> {
 }
 
 impl<'info> SettleInvoice<'info> {
-    pub fn settle_invoice(&mut self, _invoice_id: String, repayment_amount: u64) -> Result<()> {
+    pub fn settle_invoice(&mut self, invoice_id: String, repayment_amount: u64) -> Result<()> {
         self.config.require_not_paused()?;
 
         let now = lifecycle::now()?;
@@ -114,6 +115,13 @@ impl<'info> SettleInvoice<'info> {
                 self.usdc_mint.decimals,
             )?;
         }
+
+        emit!(InvoiceSettled {
+            sme: self.invoice_vault.sme,
+            invoice_id,
+            repayment_amount,
+            settlement_pool: investor_pool,
+        });
 
         Ok(())
     }

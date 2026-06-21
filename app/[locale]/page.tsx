@@ -1,5 +1,5 @@
 import { setRequestLocale } from "next-intl/server";
-import { LoginPage } from "@/app/components/LoginPage";
+import { LandingPage } from "@/app/components/LandingPage";
 
 export default async function Page({
   params,
@@ -8,6 +8,5 @@ export default async function Page({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-
-  return <LoginPage locale={locale} />;
+  return <LandingPage locale={locale} />;
 }

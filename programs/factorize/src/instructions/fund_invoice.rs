@@ -9,6 +9,7 @@ use anchor_spl::{
 
 use crate::{
     errors::FactorizeError,
+    events::InvoiceFunded,
     state::{lifecycle, Config, InvoiceStatus, InvoiceVault},
 };
 
@@ -64,7 +65,7 @@ pub struct FundInvoice<'info> {
 }
 
 impl<'info> FundInvoice<'info> {
-    pub fn fund_invoice(&mut self, _invoice_id: String, fund_amount: u64) -> Result<()> {
+    pub fn fund_invoice(&mut self, invoice_id: String, fund_amount: u64) -> Result<()> {
         self.config.require_not_paused()?;
 
         let now = lifecycle::now()?;
@@ -116,7 +117,7 @@ impl<'info> FundInvoice<'info> {
         let signer_seeds: &[&[&[u8]]] = &[&[
             b"invoice_vault",
             self.invoice_vault.sme.as_ref(),
-            _invoice_id.as_bytes(),
+            invoice_id.as_bytes(),
             &[self.invoice_vault.bump],
         ]];
 
@@ -133,6 +134,17 @@ impl<'info> FundInvoice<'info> {
             ),
             actual_fund,
             self.shares.decimals,
-        )
+        )?;
+
+        emit!(InvoiceFunded {
+            sme: self.invoice_vault.sme,
+            invoice_id,
+            investor: self.investor.key(),
+            amount: actual_fund,
+            funding_amount: self.invoice_vault.funding_amount,
+            status: self.invoice_vault.status,
+        });
+
+        Ok(())
     }
 }

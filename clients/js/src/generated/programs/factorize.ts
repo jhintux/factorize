@@ -45,6 +45,7 @@ import {
 } from "../accounts";
 import {
   getAddAnalystInstructionAsync,
+  getAdminSettleInvoiceInstructionAsync,
   getAssessInvoiceRiskInstructionAsync,
   getClaimInvestmentInstructionAsync,
   getClaimInvoiceInstructionAsync,
@@ -56,6 +57,7 @@ import {
   getSettleInvoiceInstructionAsync,
   getSyncInvoiceStatusInstruction,
   parseAddAnalystInstruction,
+  parseAdminSettleInvoiceInstruction,
   parseAssessInvoiceRiskInstruction,
   parseClaimInvestmentInstruction,
   parseClaimInvoiceInstruction,
@@ -67,6 +69,7 @@ import {
   parseSettleInvoiceInstruction,
   parseSyncInvoiceStatusInstruction,
   type AddAnalystAsyncInput,
+  type AdminSettleInvoiceAsyncInput,
   type AssessInvoiceRiskAsyncInput,
   type ClaimInvestmentAsyncInput,
   type ClaimInvoiceAsyncInput,
@@ -74,6 +77,7 @@ import {
   type InitConfigAsyncInput,
   type InitInvoiceVaultAsyncInput,
   type ParsedAddAnalystInstruction,
+  type ParsedAdminSettleInvoiceInstruction,
   type ParsedAssessInvoiceRiskInstruction,
   type ParsedClaimInvestmentInstruction,
   type ParsedClaimInvoiceInstruction,
@@ -145,6 +149,7 @@ export function identifyFactorizeAccount(
 
 export enum FactorizeInstruction {
   AddAnalyst,
+  AdminSettleInvoice,
   AssessInvoiceRisk,
   ClaimInvestment,
   ClaimInvoice,
@@ -171,6 +176,17 @@ export function identifyFactorizeInstruction(
     )
   ) {
     return FactorizeInstruction.AddAnalyst;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([71, 116, 190, 33, 164, 153, 78, 14]),
+      ),
+      0,
+    )
+  ) {
+    return FactorizeInstruction.AdminSettleInvoice;
   }
   if (
     containsBytes(
@@ -295,6 +311,9 @@ export type ParsedFactorizeInstruction<
       instructionType: FactorizeInstruction.AddAnalyst;
     } & ParsedAddAnalystInstruction<TProgram>)
   | ({
+      instructionType: FactorizeInstruction.AdminSettleInvoice;
+    } & ParsedAdminSettleInvoiceInstruction<TProgram>)
+  | ({
       instructionType: FactorizeInstruction.AssessInvoiceRisk;
     } & ParsedAssessInvoiceRiskInstruction<TProgram>)
   | ({
@@ -335,6 +354,13 @@ export function parseFactorizeInstruction<TProgram extends string>(
       return {
         instructionType: FactorizeInstruction.AddAnalyst,
         ...parseAddAnalystInstruction(instruction),
+      };
+    }
+    case FactorizeInstruction.AdminSettleInvoice: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: FactorizeInstruction.AdminSettleInvoice,
+        ...parseAdminSettleInvoiceInstruction(instruction),
       };
     }
     case FactorizeInstruction.AssessInvoiceRisk: {
@@ -438,6 +464,10 @@ export type FactorizePluginInstructions = {
     input: AddAnalystAsyncInput,
   ) => ReturnType<typeof getAddAnalystInstructionAsync> &
     SelfPlanAndSendFunctions;
+  adminSettleInvoice: (
+    input: AdminSettleInvoiceAsyncInput,
+  ) => ReturnType<typeof getAdminSettleInvoiceInstructionAsync> &
+    SelfPlanAndSendFunctions;
   assessInvoiceRisk: (
     input: AssessInvoiceRiskAsyncInput,
   ) => ReturnType<typeof getAssessInvoiceRiskInstructionAsync> &
@@ -510,6 +540,11 @@ export function factorizeProgram() {
             addSelfPlanAndSendFunctions(
               client,
               getAddAnalystInstructionAsync(input),
+            ),
+          adminSettleInvoice: (input) =>
+            addSelfPlanAndSendFunctions(
+              client,
+              getAdminSettleInvoiceInstructionAsync(input),
             ),
           assessInvoiceRisk: (input) =>
             addSelfPlanAndSendFunctions(

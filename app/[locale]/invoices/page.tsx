@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Container, Text } from "@chakra-ui/react";
 
 export default async function InvoicesPage({
   params,
@@ -10,8 +11,8 @@ export default async function InvoicesPage({
   const t = await getTranslations("invoices");
 
   return (
-    <main style={{ padding: "48px 16px", fontFamily: "system-ui, sans-serif" }}>
-      <p>{t("hello")}</p>
-    </main>
+    <Container maxW="lg" py={{ base: 8, md: 12 }} px={4}>
+      <Text>{t("hello")}</Text>
+    </Container>
   );
 }

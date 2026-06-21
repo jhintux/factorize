@@ -10,7 +10,12 @@ const intlMiddleware = createMiddleware({
 });
 
 function isProtectedPath(pathname: string): boolean {
-  return locales.some((locale) => pathname.startsWith(`/${locale}/invoices`));
+  return locales.some(
+    (locale) =>
+      pathname.startsWith(`/${locale}/investor`) ||
+      pathname.startsWith(`/${locale}/sme`) ||
+      pathname.startsWith(`/${locale}/admin`),
+  );
 }
 
 function hasSession(request: NextRequest): boolean {

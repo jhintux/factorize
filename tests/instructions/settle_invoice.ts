@@ -11,9 +11,11 @@ import { client } from "../factorize";
 import {
   assessInvoice,
   claimInvoiceAdvance,
+  ensureUsdcAta,
   expectFactorizeError,
   fullyFundInvoice,
   getUsdcBalance,
+  mintUsdcTo,
   settleInvoice,
   setupInvoiceVault,
   setupProtocol,
@@ -118,7 +120,6 @@ describe("settleInvoice", () => {
     await assessInvoice(factorizeClient, protocol, invoice);
     const impostor = await generateKeyPairSigner();
     await factorizeClient.airdrop(impostor.address, lamports(10_000_000n));
-    const { ensureUsdcAta, mintUsdcTo } = await import("../helpers");
     await ensureUsdcAta(factorizeClient, protocol.usdc, impostor.address);
     await fullyFundInvoice(factorizeClient, protocol, invoice);
     await mintUsdcTo(
@@ -151,7 +152,6 @@ describe("settleInvoice", () => {
     const invoice = await setupInvoiceVault(factorizeClient, protocol);
     await assessInvoice(factorizeClient, protocol, invoice);
     const wrongTreasury = await generateKeyPairSigner();
-    const { ensureUsdcAta } = await import("../helpers");
     await ensureUsdcAta(factorizeClient, protocol.usdc, wrongTreasury.address);
     await fullyFundInvoice(factorizeClient, protocol, invoice);
     await claimInvoiceAdvance(factorizeClient, protocol, invoice);

@@ -9,6 +9,11 @@ import {
   type UserRole,
 } from "@/lib/auth/session";
 import { isValidLocale } from "@/i18n/config";
+import {
+  getWalletAdminStatus,
+  isPlatformAdmin,
+} from "@/lib/auth/admin";
+import { isAnalystWhitelistedOnChain } from "@/lib/factorize/protocolState";
 
 export type AuthResult =
   | { ok: true; role: UserRole }
@@ -31,6 +36,11 @@ export async function loginByWallet(
     return { ok: false, error: "configMissing" };
   }
 
+  if (await isPlatformAdmin(wallet)) {
+    await setSession({ wallet, role: "admin", locale });
+    redirect(`/${locale}/admin/assessments`);
+  }
+
   const { data: investor } = await supabase
     .from("investors")
     .select("id")
@@ -39,7 +49,7 @@ export async function loginByWallet(
 
   if (investor) {
     await setSession({ wallet, role: "investor", locale });
-    redirect(`/${locale}/invoices`);
+    redirect(`/${locale}/investor/invoices`);
   }
 
   const { data: sme } = await supabase
@@ -50,10 +60,26 @@ export async function loginByWallet(
 
   if (sme) {
     await setSession({ wallet, role: "sme", locale });
-    redirect(`/${locale}/invoices`);
+    redirect(`/${locale}/sme/invoices`);
   }
 
-  return { ok: false, error: "notRegistered" };
+  if (await isAnalystWhitelistedOnChain(wallet)) {
+    await setSession({ wallet, role: "analyst", locale });
+    redirect(`/${locale}/admin/assessments`);
+  }
+
+  const displayName = truncateWallet(wallet);
+  const { error } = await supabase.from("investors").insert({
+    name: displayName,
+    wallet,
+  });
+
+  if (error) {
+    return { ok: false, error: "insertFailed" };
+  }
+
+  await setSession({ wallet, role: "investor", locale });
+  redirect(`/${locale}/investor/invoices`);
 }
 
 export async function signUpInvestor(
@@ -102,7 +128,7 @@ export async function signUpInvestor(
   }
 
   await setSession({ wallet, role: "investor", locale });
-  redirect(`/${locale}/invoices`);
+  redirect(`/${locale}/investor/invoices`);
 }
 
 export async function signUpSme(
@@ -157,13 +183,26 @@ export async function signUpSme(
     return { ok: false, error: "alreadyRegistered" };
   }
 
+  const { data: company, error: companyError } = await supabase
+    .from("companies")
+    .insert({
+      company_name: company_name.trim(),
+      about: about.trim(),
+      ruc: ruc.trim(),
+      sector_id,
+      activity_code,
+      wallet,
+    })
+    .select("id")
+    .single();
+
+  if (companyError || !company) {
+    return { ok: false, error: "insertFailed" };
+  }
+
   const { error } = await supabase.from("smes").insert({
-    company_name: company_name.trim(),
-    about: about.trim(),
-    ruc: ruc.trim(),
     wallet,
-    sector_id,
-    activity_code,
+    company_id: company.id,
   });
 
   if (error) {
@@ -171,7 +210,7 @@ export async function signUpSme(
   }
 
   await setSession({ wallet, role: "sme", locale });
-  redirect(`/${locale}/invoices`);
+  redirect(`/${locale}/sme/invoices`);
 }
 
 export async function getSectorsAndActivities(locale: string) {
@@ -203,4 +242,12 @@ export async function getSectorsAndActivities(locale: string) {
         name: a[nameField as "name_es" | "name_en"],
       })) ?? [],
   };
+}
+
+export async function getWalletLoginStatus(wallet: string) {
+  if (!isValidWallet(wallet)) {
+    return { ok: false as const, error: "invalidWallet" };
+  }
+
+  return { ok: true as const, status: await getWalletAdminStatus(wallet) };
 }

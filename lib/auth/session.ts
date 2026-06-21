@@ -1,8 +1,11 @@
 import { cookies } from "next/headers";
+import { isValidWallet, truncateWallet } from "@/lib/auth/wallet";
+
+export { isValidWallet, truncateWallet };
 
 export const SESSION_COOKIE = "factorize_session";
 
-export type UserRole = "investor" | "sme";
+export type UserRole = "investor" | "sme" | "admin" | "analyst";
 
 export type SessionData = {
   wallet: string;
@@ -36,13 +39,4 @@ export async function setSession(data: SessionData) {
 export async function clearSession() {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE);
-}
-
-export function truncateWallet(wallet: string): string {
-  if (wallet.length <= 8) return wallet;
-  return `${wallet.slice(0, 3)}…${wallet.slice(-3)}`;
-}
-
-export function isValidWallet(wallet: string): boolean {
-  return typeof wallet === "string" && wallet.length >= 32 && wallet.length <= 64;
 }

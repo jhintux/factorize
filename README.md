@@ -31,7 +31,7 @@ stateDiagram-v2
     [*] --> Funding: init_invoice_vault
     Funding --> InProgress: funding_amount >= advance_amount
     Funding --> Expired: past due_date and underfunded
-    InProgress --> Settled: settle_invoice
+    InProgress --> Settled: settle_invoice / admin_settle_invoice
     InProgress --> Defaulted: past settle_date
     Expired --> [*]: claim_investment (refund)
     Settled --> [*]: claim_investment (payout)
@@ -60,6 +60,7 @@ Status transitions on `Funding` and `InProgress` are also applied automatically 
 | `fund_invoice` | investor | `Funding` (assessed) | Transfer USDC into the vault; mint `shares` 1:1; moves to `InProgress` when fully funded |
 | `claim_invoice` | SME | `InProgress` | SME withdraws the funded USDC advance from the vault |
 | `settle_invoice` | SME | `InProgress` | SME repays into the vault; protocol fee sent to treasury; status → `Settled` |
+| `admin_settle_invoice` | admin | `InProgress` | Platform ops settles after off-chain payment verified; USDC from admin treasury |
 | `claim_investment` | investor | `Funding`, `Expired`, or `Settled` | Burn `shares` and receive USDC (refund if expired/underfunded, proportional payout if settled) |
 | `sync_invoice_status` | anyone | — | Permissionless keeper hook for `due_date` / `settle_date` transitions |
 
@@ -155,4 +156,106 @@ sequenceDiagram
     Factorize->>VaultATA: transfer USDC (proportional payout or refund)
     Factorize->>InvoiceVault: update claimed_amount
     Factorize-->>Investor: USDC received
+```
+
+---
+
+## Product architecture
+
+Factorize combines a Next.js app, Supabase (Postgres + Storage + Edge Functions), Helius webhooks, and the Solana program above.
+
+```mermaid
+flowchart LR
+  subgraph clients [Clients]
+    Investor[Investor UI]
+    Seller[SME seller UI]
+    Admin[Admin portal]
+  end
+  subgraph app [Next.js]
+    Actions[Server actions]
+    FactorizeLib[lib/factorize]
+  end
+  subgraph data [Supabase]
+    DB[(Postgres)]
+    Storage[(Invoice PDFs)]
+    Edge[Edge Functions]
+  end
+  subgraph chain [Solana]
+    Program[Factorize program]
+    Helius[Helius webhooks]
+  end
+  Investor --> Actions
+  Seller --> Actions
+  Admin --> Actions
+  Actions --> DB
+  Actions --> FactorizeLib
+  FactorizeLib --> Program
+  Helius --> Edge
+  Edge --> DB
+  Edge --> Program
+```
+
+### Seller vs payer
+
+- **Seller (SME)** — wallet in `smes`; signs `init_invoice_vault`, `claim_invoice`; on-chain `InvoiceVault.sme`.
+- **Payer** — debtor company in `companies` (canonical by RUC); shown to investors; assessed for risk. Same `companies` row can appear as payer on many invoices or as seller on another SME’s profile.
+
+| Table | Role |
+|-------|------|
+| `companies` | Canonical entity (RUC, name, sector) |
+| `smes` | Seller wallet + `company_id` FK |
+| `invoices` | Off-chain mirror: payer, amounts, dates, vault PDAs, status |
+| `analysts` / `invoice_assessments` | Risk queue and ratings |
+| `chain_events` | Idempotent Helius event log |
+
+`operation_type` is `factoring` or `confirming`. `invoice_hash` is SHA-256 of **canonical JSON** (see `lib/factorize/canonicalInvoiceHash.ts`), not the PDF.
+
+### Indexing and keepers
+
+1. **Primary:** Helius → `supabase/functions/helius-webhook` parses Anchor events (`lib/factorize/parseEvents.ts`) and upserts `invoices` / `chain_events`.
+2. **Passive expiry:** `pg_cron` → `keeper-sync` sends permissionless `sync_invoice_status` for stale `Funding` / `InProgress` rows (requires `KEEPER_SECRET_KEY`).
+3. **Reconciliation:** `reconcile-invoices` compares RPC vault accounts to DB (daily gap repair).
+
+### Settlement (v1)
+
+Off-chain payer pays the platform → ops marks `payment_verified_at` → admin signs `admin_settle_invoice` (USDC from admin treasury → vault + fee to protocol treasury). Investors then `claim_investment`. On-chain SME `settle_invoice` remains for a future `settle_onchain` path.
+
+### Anchor events
+
+Lifecycle instructions emit events consumed by the webhook: `InvoiceVaultInitialized`, `InvoiceRiskAssessed`, `InvoiceFunded`, `InvoiceSettled`, `InvoiceAdminSettled`, `InvoiceStatusSynced`, `InvestmentClaimed`, etc.
+
+### Environment variables
+
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | App + Edge Functions |
+| `NEXT_PUBLIC_PARA_API_KEY` | Para wallet auth |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | Client RPC reads / sends |
+| `NEXT_PUBLIC_USDC_MINT`, `NEXT_PUBLIC_TREASURY_ADDRESS` | Token + fee recipient |
+| `FACTORIZE_ADMIN_WALLETS` | Admin route guard (comma-separated) |
+| `HELIUS_API_KEY`, `HELIUS_WEBHOOK_SECRET`, `WEBHOOK_URL` | Webhook registration |
+| `CRON_SECRET`, `KEEPER_SECRET_KEY`, `SOLANA_RPC_URL` | Edge keeper cron |
+
+### Development
+
+**Prerequisites:** Node.js 24+ (including Node 26), Yarn, Anchor, Solana CLI.
+
+```bash
+anchor build              # compile program → target/deploy/factorize.so + target/idl/factorize.json
+yarn generate:sdk         # sync IDL copies and regenerate clients/js (@factorize/sdk)
+yarn test:anchor          # LiteSVM integration tests (Mocha + tsx)
+# or: anchor test         # runs yarn test:anchor via Anchor.toml
+yarn dev                  # Next.js app
+```
+
+After any on-chain change, always run `anchor build && yarn generate:sdk` before testing or deploying the app. The canonical IDL is `target/idl/factorize.json`; `yarn generate:sdk` copies it to `lib/factorize/idl.json` and `supabase/functions/_shared/idl.json`, then regenerates the TypeScript client.
+
+**SDK and IDL sync.** `@factorize/sdk` is a local `file:clients/js` dependency. Codama output lives in `clients/js`; `postinstall` copies it into `node_modules/@factorize/sdk`. If you regenerate the client without reinstalling, run `yarn install` (or rely on `postinstall` after a fresh install). A stale IDL/SDK mismatch causes on-chain account validation failures (e.g. Anchor error `#3008` / `ConstraintProgramId`) when instruction account lists drift from the deployed program.
+
+**Tests.** Integration tests use Mocha 11 with `tsx` (not `ts-mocha`), which is compatible with Node 26 and the Next.js TypeScript setup. Test config is in `tsconfig.test.json` (CommonJS); the app uses `tsconfig.json` (ESM/bundler). Tests load `target/deploy/factorize.so` via LiteSVM — run `anchor build` first if the binary is missing or outdated.
+
+Register the Helius webhook after deploying the edge function:
+
+```bash
+node scripts/register-helius-webhook.mjs
 ```

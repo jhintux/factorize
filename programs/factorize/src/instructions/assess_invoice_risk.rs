@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     errors::FactorizeError,
+    events::InvoiceRiskAssessed,
     state::{lifecycle, AnalystWhitelist, Config, InvoiceStatus, InvoiceVault},
 };
 
@@ -26,7 +27,7 @@ pub struct AssessInvoiceRisk<'info> {
 }
 
 impl<'info> AssessInvoiceRisk<'info> {
-    pub fn assess_invoice_risk(&mut self, _invoice_id: String, invoice_hash: [u8; 32]) -> Result<()> {
+    pub fn assess_invoice_risk(&mut self, invoice_id: String, invoice_hash: [u8; 32]) -> Result<()> {
         self.config.require_not_paused()?;
         require_keys_eq!(self.invoice_vault.analyst, Pubkey::default(), FactorizeError::AlreadyAssessed);
 
@@ -45,6 +46,14 @@ impl<'info> AssessInvoiceRisk<'info> {
         self.invoice_vault.invoice_hash = invoice_hash;
         self.invoice_vault.analyst = self.analyst.key();
         self.invoice_vault.verified_at = now;
+
+        emit!(InvoiceRiskAssessed {
+            sme: self.invoice_vault.sme,
+            invoice_id,
+            analyst: self.analyst.key(),
+            invoice_hash,
+            verified_at: now,
+        });
 
         Ok(())
     }

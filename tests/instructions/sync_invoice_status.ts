@@ -2,6 +2,7 @@ import { InvoiceStatus } from "@factorize/sdk";
 import { expect } from "chai";
 import { client } from "../factorize";
 import {
+  assessInvoice,
   fullyFundInvoice,
   setupInvoiceVault,
   setupProtocol,
@@ -127,7 +128,6 @@ async function assessAndFund(
   protocol: Awaited<ReturnType<typeof setupProtocol>>,
   invoice: Awaited<ReturnType<typeof setupInvoiceVault>>,
 ) {
-  const { assessInvoice } = await import("../helpers");
   await assessInvoice(factorizeClient, protocol, invoice);
   await fullyFundInvoice(factorizeClient, protocol, invoice);
 }

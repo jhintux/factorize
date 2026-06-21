@@ -1,18 +1,18 @@
 "use client";
 
-import Link from "next/link";
+import NextLink from "next/link";
 import { usePathname } from "next/navigation";
+import { HStack, Link } from "@chakra-ui/react";
 import { locales, type Locale } from "@/i18n/config";
 
 export function LocaleSwitcher() {
   const pathname = usePathname();
   const segments = pathname.split("/");
   const currentLocale = segments[1] as Locale;
-
   const rest = segments.slice(2).join("/");
 
   return (
-    <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+    <HStack as="nav" gap={3} justify="center">
       {locales.map((locale) => {
         const href = rest ? `/${locale}/${rest}` : `/${locale}`;
         const isActive = locale === currentLocale;
@@ -20,18 +20,16 @@ export function LocaleSwitcher() {
         return (
           <Link
             key={locale}
-            href={href}
-            style={{
-              fontSize: 14,
-              fontWeight: isActive ? 600 : 400,
-              color: isActive ? "#111" : "#6b7280",
-              textDecoration: isActive ? "underline" : "none",
-            }}
+            asChild
+            fontSize="sm"
+            fontWeight={isActive ? "semibold" : "normal"}
+            color={isActive ? "fg.default" : "fg.muted"}
+            textDecoration={isActive ? "underline" : "none"}
           >
-            {locale.toUpperCase()}
+            <NextLink href={href}>{locale.toUpperCase()}</NextLink>
           </Link>
         );
       })}
-    </div>
+    </HStack>
   );
 }

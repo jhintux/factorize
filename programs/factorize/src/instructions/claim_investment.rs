@@ -10,6 +10,7 @@ use anchor_spl::{
 
 use crate::{
     errors::FactorizeError,
+    events::InvestmentClaimed,
     math::Calculator,
     state::{lifecycle, Config, InvoiceStatus, InvoiceVault},
 };
@@ -66,7 +67,7 @@ pub struct ClaimInvestment<'info> {
 }
 
 impl<'info> ClaimInvestment<'info> {
-    pub fn claim_investment(&mut self, _invoice_id: String, shares: u64) -> Result<()> {
+    pub fn claim_investment(&mut self, invoice_id: String, shares: u64) -> Result<()> {
         let now = lifecycle::now()?;
         lifecycle::sync_invoice_status(&mut self.invoice_vault, now);
 
@@ -132,7 +133,7 @@ impl<'info> ClaimInvestment<'info> {
         let signer_seeds: &[&[&[u8]]] = &[&[
             b"invoice_vault",
             self.invoice_vault.sme.as_ref(),
-            _invoice_id.as_bytes(),
+            invoice_id.as_bytes(),
             &[self.invoice_vault.bump],
         ]];
 
@@ -163,6 +164,14 @@ impl<'info> ClaimInvestment<'info> {
                 },
             ))?;
         }
+
+        emit!(InvestmentClaimed {
+            sme: self.invoice_vault.sme,
+            invoice_id,
+            investor: self.investor.key(),
+            shares,
+            payout: claim_amount,
+        });
 
         Ok(())
     }

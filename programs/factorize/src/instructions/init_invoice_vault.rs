@@ -6,6 +6,7 @@ use anchor_spl::{
 
 use crate::{
     errors::FactorizeError,
+    events::InvoiceVaultInitialized,
     state::{Config, InvoiceStatus, InvoiceVault, InvoiceVaultProps},
 };
 
@@ -74,6 +75,17 @@ impl<'info> InitInvoiceVault<'info> {
             verified_at: 0,
             status: InvoiceStatus::Funding,
             bump: bump.invoice_vault,
+        });
+
+        emit!(InvoiceVaultInitialized {
+            sme: self.sme.key(),
+            invoice_id: props.invoice_id.clone(),
+            vault: self.invoice_vault.key(),
+            shares_mint: self.shares.key(),
+            advance_amount: props.advance_amount,
+            repayment_amount: props.repayment_amount,
+            due_date: props.due_date,
+            settle_date: props.settle_date,
         });
 
         Ok(())

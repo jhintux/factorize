@@ -6,6 +6,7 @@ use anchor_spl::{
 
 use crate::{
     errors::FactorizeError,
+    events::InvoiceAdvanceClaimed,
     state::{lifecycle, Config, InvoiceStatus, InvoiceVault},
 };
 
@@ -50,7 +51,7 @@ pub struct ClaimInvoice<'info> {
 }
 
 impl<'info> ClaimInvoice<'info> {
-    pub fn claim_invoice(&mut self, _invoice_id: String) -> Result<()> {
+    pub fn claim_invoice(&mut self, invoice_id: String) -> Result<()> {
         self.config.require_not_paused()?;
 
         let now = lifecycle::now()?;
@@ -60,10 +61,12 @@ impl<'info> ClaimInvoice<'info> {
             return Err(FactorizeError::InvoiceNotInProgress.into());
         }
 
+        let amount = self.invoice_vault_ata.amount;
+
         let signer_seeds: &[&[&[u8]]] = &[&[
             b"invoice_vault",
             self.invoice_vault.sme.as_ref(),
-            _invoice_id.as_bytes(),
+            invoice_id.as_bytes(),
             &[self.invoice_vault.bump],
         ]];
 
@@ -78,9 +81,15 @@ impl<'info> ClaimInvoice<'info> {
                 },
                 signer_seeds,
             ),
-            self.invoice_vault_ata.amount,
+            amount,
             self.usdc_mint.decimals,
         )?;
+
+        emit!(InvoiceAdvanceClaimed {
+            sme: self.invoice_vault.sme,
+            invoice_id,
+            amount,
+        });
 
         Ok(())
     }

@@ -4,6 +4,7 @@ mod instructions;
 mod state;
 mod errors;
 mod math;
+mod events;
 
 use instructions::*;
 use state::*;
@@ -42,6 +43,10 @@ pub mod factorize {
         ctx.accounts.settle_invoice(invoice_id, repayment_amount)
     }
 
+    pub fn admin_settle_invoice(ctx: Context<AdminSettleInvoice>, invoice_id: String, repayment_amount: u64) -> Result<()> {
+        ctx.accounts.admin_settle_invoice(invoice_id, repayment_amount)
+    }
+
     pub fn claim_invoice(ctx: Context<ClaimInvoice>, invoice_id: String) -> Result<()> {
         ctx.accounts.claim_invoice(invoice_id)
     }
@@ -50,8 +55,8 @@ pub mod factorize {
         ctx.accounts.claim_investment(invoice_id, shares)
     }
 
-    pub fn sync_invoice_status(ctx: Context<SyncInvoiceStatus>, _invoice_id: String) -> Result<()> {
-        ctx.accounts.sync_invoice_status()
+    pub fn sync_invoice_status(ctx: Context<SyncInvoiceStatus>, invoice_id: String) -> Result<()> {
+        ctx.accounts.sync_invoice_status(invoice_id)
     }
 
     pub fn add_analyst(ctx: Context<AddAnalyst>) -> Result<()> {

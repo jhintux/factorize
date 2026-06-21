@@ -7,6 +7,7 @@
  */
 
 export * from "./addAnalyst";
+export * from "./adminSettleInvoice";
 export * from "./assessInvoiceRisk";
 export * from "./claimInvestment";
 export * from "./claimInvoice";

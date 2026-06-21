@@ -8,12 +8,15 @@ skip-lint = false
 [programs.localnet]
 factorize = "6YWgPX8CbreGMdPAkCnXxLG5xW9T8LiTQHqafP3C3GhT"
 
+[programs.devnet]
+factorize = "6YWgPX8CbreGMdPAkCnXxLG5xW9T8LiTQHqafP3C3GhT"
+
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "TS_NODE_SKIP_IGNORE=true yarn run ts-mocha -p ./tsconfig.test.json -t 1000000 \"tests/**/*.ts\""
+test = "yarn run test:anchor"

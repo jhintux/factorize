@@ -1,10 +1,22 @@
 "use client";
 
 import { useAccount, useModal, useWallet } from "@getpara/react-sdk";
-import Link from "next/link";
+import NextLink from "next/link";
 import { useTranslations } from "next-intl";
 import { useMemo, useState, useTransition } from "react";
-import { Box, Button, Stack, Text } from "@chakra-ui/react";
+import { useForm } from "react-hook-form";
+import {
+  Box,
+  Button,
+  Field,
+  Fieldset,
+  Input,
+  Link,
+  NativeSelect,
+  Stack,
+  Text,
+  Textarea,
+} from "@chakra-ui/react";
 import {
   signUpInvestor,
   signUpSme,
@@ -27,20 +39,14 @@ type SignUpFormProps = {
 
 type AccountType = "investor" | "enterprise";
 
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: 14,
-  fontWeight: 500,
-  marginBottom: 4,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "10px 12px",
-  border: "1px solid #e5e7eb",
-  borderRadius: 4,
-  fontSize: 14,
-  boxSizing: "border-box",
+type SignUpFormValues = {
+  accountType: AccountType;
+  name: string;
+  companyName: string;
+  about: string;
+  ruc: string;
+  sectorId: string;
+  activityCode: string;
 };
 
 export function SignUpForm({ locale, sectors, activities }: SignUpFormProps) {
@@ -49,17 +55,31 @@ export function SignUpForm({ locale, sectors, activities }: SignUpFormProps) {
   const { openModal } = useModal();
   const { isConnected } = useAccount();
   const { data: wallet } = useWallet();
-  const [accountType, setAccountType] = useState<AccountType>("investor");
-  const [name, setName] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [about, setAbout] = useState("");
-  const [ruc, setRuc] = useState("");
-  const [sectorId, setSectorId] = useState("");
-  const [activityCode, setActivityCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const address = wallet?.address;
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<SignUpFormValues>({
+    defaultValues: {
+      accountType: "investor",
+      name: "",
+      companyName: "",
+      about: "",
+      ruc: "",
+      sectorId: "",
+      activityCode: "",
+    },
+  });
+
+  const accountType = watch("accountType");
+  const sectorId = watch("sectorId");
 
   const filteredActivities = useMemo(
     () => activities.filter((a) => a.sector_id === sectorId),
@@ -75,8 +95,7 @@ export function SignUpForm({ locale, sectors, activities }: SignUpFormProps) {
     }
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
+  const onSubmit = (values: SignUpFormValues) => {
     if (!address) {
       setError(t("walletRequired"));
       return;
@@ -84,25 +103,25 @@ export function SignUpForm({ locale, sectors, activities }: SignUpFormProps) {
 
     setError(null);
     startTransition(async () => {
-      if (accountType === "investor") {
-        const result = await signUpInvestor(address, locale, name);
+      if (values.accountType === "investor") {
+        const result = await signUpInvestor(address, locale, values.name);
         handleError(result);
         return;
       }
 
       const result = await signUpSme(address, locale, {
-        company_name: companyName,
-        about,
-        ruc,
-        sector_id: sectorId,
-        activity_code: activityCode,
+        company_name: values.companyName,
+        about: values.about,
+        ruc: values.ruc,
+        sector_id: values.sectorId,
+        activity_code: values.activityCode,
       });
       handleError(result);
     });
   };
 
   return (
-    <Box maxW="560px" mx="auto" px={4} py={12} fontFamily="system-ui, sans-serif">
+    <Box maxW="560px" mx="auto" px={4} py={12}>
       <Box mb={6}>
         <LocaleSwitcher />
       </Box>
@@ -111,29 +130,31 @@ export function SignUpForm({ locale, sectors, activities }: SignUpFormProps) {
         <Text fontSize="2xl" fontWeight="bold">
           {t("title")}
         </Text>
-        <Text color="gray.600">{t("description")}</Text>
+        <Text color="fg.muted">{t("description")}</Text>
       </Stack>
 
       {!isConnected ? (
         <Box
           borderWidth="1px"
-          borderColor="gray.200"
+          borderColor="border.subtle"
+          rounded="lg"
           p={8}
           textAlign="center"
-          bg="white"
+          bg="bg"
         >
           <Button onClick={() => openModal()} width="full" colorPalette="gray">
             {t("connectWallet")}
           </Button>
         </Box>
       ) : (
-        <Box as="form" onSubmit={handleSubmit}>
+        <Box as="form" onSubmit={handleSubmit(onSubmit)}>
           <Stack gap={4}>
             <Box
               borderWidth="1px"
-              borderColor="gray.200"
+              borderColor="border.subtle"
+              rounded="md"
               p={4}
-              bg="gray.50"
+              bg="bg.subtle"
               fontFamily="mono"
               fontSize="sm"
               wordBreak="break-all"
@@ -147,7 +168,7 @@ export function SignUpForm({ locale, sectors, activities }: SignUpFormProps) {
                 flex={1}
                 variant={accountType === "investor" ? "solid" : "outline"}
                 colorPalette="gray"
-                onClick={() => setAccountType("investor")}
+                onClick={() => setValue("accountType", "investor")}
               >
                 {t("investor")}
               </Button>
@@ -156,112 +177,112 @@ export function SignUpForm({ locale, sectors, activities }: SignUpFormProps) {
                 flex={1}
                 variant={accountType === "enterprise" ? "solid" : "outline"}
                 colorPalette="gray"
-                onClick={() => setAccountType("enterprise")}
+                onClick={() => setValue("accountType", "enterprise")}
               >
                 {t("enterprise")}
               </Button>
             </Stack>
 
             {accountType === "investor" ? (
-              <div>
-                <label style={labelStyle} htmlFor="name">
-                  {t("nameOptional")}
-                </label>
-                <input
-                  id="name"
-                  style={inputStyle}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-                <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
-                  {t("nameHint")}
-                </p>
-              </div>
+              <Field.Root>
+                <Field.Label htmlFor="name">{t("nameOptional")}</Field.Label>
+                <Input id="name" {...register("name")} />
+                <Field.HelperText>{t("nameHint")}</Field.HelperText>
+              </Field.Root>
             ) : (
-              <>
-                <div>
-                  <label style={labelStyle} htmlFor="companyName">
-                    {t("companyName")}
-                  </label>
-                  <input
-                    id="companyName"
-                    style={inputStyle}
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle} htmlFor="about">
-                    {t("about")}
-                  </label>
-                  <textarea
-                    id="about"
-                    style={{ ...inputStyle, minHeight: 96 }}
-                    value={about}
-                    onChange={(e) => setAbout(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle} htmlFor="ruc">
-                    {t("ruc")}
-                  </label>
-                  <input
-                    id="ruc"
-                    style={inputStyle}
-                    value={ruc}
-                    onChange={(e) => setRuc(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle} htmlFor="sector">
-                    {t("sector")}
-                  </label>
-                  <select
-                    id="sector"
-                    style={inputStyle}
-                    value={sectorId}
-                    onChange={(e) => {
-                      setSectorId(e.target.value);
-                      setActivityCode("");
-                    }}
-                    required
-                  >
-                    <option value="">{t("selectSector")}</option>
-                    {sectors.map((sector) => (
-                      <option key={sector.id} value={sector.id}>
-                        {sector.id}: {sector.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle} htmlFor="activity">
-                    {t("activity")}
-                  </label>
-                  <select
-                    id="activity"
-                    style={inputStyle}
-                    value={activityCode}
-                    onChange={(e) => setActivityCode(e.target.value)}
-                    required
-                    disabled={!sectorId}
-                  >
-                    <option value="">{t("selectActivity")}</option>
-                    {filteredActivities.map((activity) => (
-                      <option key={activity.code} value={activity.code}>
-                        {activity.code}: {activity.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </>
+              <Fieldset.Root>
+                <Fieldset.Content>
+                  <Stack gap={4}>
+                    <Field.Root invalid={!!errors.companyName} required>
+                      <Field.Label htmlFor="companyName">
+                        {t("companyName")}
+                      </Field.Label>
+                      <Input
+                        id="companyName"
+                        {...register("companyName", {
+                          required: t("companyName"),
+                        })}
+                      />
+                      <Field.ErrorText>
+                        {errors.companyName?.message}
+                      </Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.about} required>
+                      <Field.Label htmlFor="about">{t("about")}</Field.Label>
+                      <Textarea
+                        id="about"
+                        minH="24"
+                        {...register("about", { required: t("about") })}
+                      />
+                      <Field.ErrorText>{errors.about?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.ruc} required>
+                      <Field.Label htmlFor="ruc">{t("ruc")}</Field.Label>
+                      <Input
+                        id="ruc"
+                        {...register("ruc", { required: t("ruc") })}
+                      />
+                      <Field.ErrorText>{errors.ruc?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.sectorId} required>
+                      <Field.Label htmlFor="sector">{t("sector")}</Field.Label>
+                      <NativeSelect.Root>
+                        <NativeSelect.Field
+                          id="sector"
+                          {...register("sectorId", {
+                            required: t("sector"),
+                            onChange: () => setValue("activityCode", ""),
+                          })}
+                        >
+                          <option value="">{t("selectSector")}</option>
+                          {sectors.map((sector) => (
+                            <option key={sector.id} value={sector.id}>
+                              {sector.id}: {sector.name}
+                            </option>
+                          ))}
+                        </NativeSelect.Field>
+                        <NativeSelect.Indicator />
+                      </NativeSelect.Root>
+                      <Field.ErrorText>
+                        {errors.sectorId?.message}
+                      </Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.activityCode} required>
+                      <Field.Label htmlFor="activity">
+                        {t("activity")}
+                      </Field.Label>
+                      <NativeSelect.Root>
+                        <NativeSelect.Field
+                          id="activity"
+                          disabled={!sectorId}
+                          {...register("activityCode", {
+                            required: t("activity"),
+                          })}
+                        >
+                          <option value="">{t("selectActivity")}</option>
+                          {filteredActivities.map((activity) => (
+                            <option key={activity.code} value={activity.code}>
+                              {activity.code}: {activity.name}
+                            </option>
+                          ))}
+                        </NativeSelect.Field>
+                        <NativeSelect.Indicator />
+                      </NativeSelect.Root>
+                      <Field.ErrorText>
+                        {errors.activityCode?.message}
+                      </Field.ErrorText>
+                    </Field.Root>
+                  </Stack>
+                </Fieldset.Content>
+              </Fieldset.Root>
             )}
 
             {error && (
-              <Text color="red.600" fontSize="sm">
+              <Text color="red.500" fontSize="sm">
                 {error}
               </Text>
             )}
@@ -278,8 +299,10 @@ export function SignUpForm({ locale, sectors, activities }: SignUpFormProps) {
         </Box>
       )}
 
-      <Text textAlign="center" mt={6} color="gray.600">
-        <Link href={`/${locale}`}>{t("loginLink")}</Link>
+      <Text textAlign="center" mt={6} color="fg.muted">
+        <Link asChild>
+          <NextLink href={`/${locale}`}>{t("loginLink")}</NextLink>
+        </Link>
       </Text>
     </Box>
   );
