@@ -6,6 +6,7 @@ import {
   invoiceStatusLabel,
   sleep,
 } from "./demoWallet";
+import { withRpcRetry } from "./rpcRetry";
 
 export type DemoVaultSnapshot = {
   status: string;
@@ -25,7 +26,9 @@ export async function fetchDemoVaultSnapshot(
 ): Promise<DemoVaultSnapshot | null> {
   const rpc = createDemoRpc();
   try {
-    const vault = await fetchInvoiceVault(rpc, address(vaultPda));
+    const vault = await withRpcRetry(() =>
+      fetchInvoiceVault(rpc, address(vaultPda)),
+    );
     const status = invoiceStatusLabel(vault.data.status);
     const summary = [
       `status=${status}`,

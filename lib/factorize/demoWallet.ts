@@ -29,6 +29,7 @@ import {
   sendInstruction,
   simulateThenSendInstruction,
 } from "./sendInstruction";
+import { withRpcRetry } from "./rpcRetry";
 
 export function createDemoRpc() {
   return createSolanaRpc(getServerRpcUrl());
@@ -68,17 +69,10 @@ export async function resolveDemoTokenProgram(): Promise<Address> {
   if (!mint) throw new Error("NEXT_PUBLIC_USDC_MINT is not configured");
 
   const rpc = createDemoRpc();
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      cachedTokenProgram = await resolveTokenProgramForMint(rpc, mint);
-      return cachedTokenProgram;
-    } catch (error) {
-      if (attempt === 2) throw error;
-      await sleep(500 * (attempt + 1));
-    }
-  }
-
-  throw new Error("Failed to resolve token program");
+  cachedTokenProgram = await withRpcRetry(() =>
+    resolveTokenProgramForMint(rpc, mint),
+  );
+  return cachedTokenProgram;
 }
 
 export async function getDemoUsdcContext() {
@@ -106,9 +100,9 @@ export async function ensureDemoUsdcAta(owner: Address): Promise<Address> {
   const { ata } = await findDemoTokenAta(owner, usdcMint, tokenProgram);
   const rpc = createDemoRpc();
   // Token-2022 ATAs exceed the RPC base58 payload limit; use base64 for existence checks.
-  const { value: existing } = await rpc
-    .getAccountInfo(ata, { encoding: "base64" })
-    .send();
+  const { value: existing } = await withRpcRetry(() =>
+    rpc.getAccountInfo(ata, { encoding: "base64" }).send(),
+  );
   if (existing) {
     return ata;
   }
@@ -136,7 +130,7 @@ export async function ensureSolBalance(
   minLamports: bigint = DEMO_MIN_SOL_LAMPORTS,
 ) {
   const rpc = createDemoRpc();
-  const balance = await rpc.getBalance(wallet).send();
+  const balance = await withRpcRetry(() => rpc.getBalance(wallet).send());
   if (balance.value >= minLamports) return;
 
   throw new Error(
@@ -147,7 +141,9 @@ export async function ensureSolBalance(
 export async function confirmDemoSignature(signature: string, attempts = 30) {
   const rpc = createDemoRpc();
   for (let i = 0; i < attempts; i++) {
-    const { value } = await rpc.getSignatureStatuses([signature as never]).send();
+    const { value } = await withRpcRetry(() =>
+      rpc.getSignatureStatuses([signature as never]).send(),
+    );
     const status = value[0];
     if (
       status &&
@@ -168,8 +164,8 @@ export function sleep(ms: number) {
 /** Validator unix time — anchors demo due/settle dates to the chain clock. */
 export async function getDemoChainUnixTime(): Promise<number> {
   const rpc = createDemoRpc();
-  const slot = await rpc.getSlot().send();
-  const blockTime = await rpc.getBlockTime(slot).send();
+  const slot = await withRpcRetry(() => rpc.getSlot().send());
+  const blockTime = await withRpcRetry(() => rpc.getBlockTime(slot).send());
   if (blockTime !== null) return Number(blockTime);
   return Math.floor(Date.now() / 1000);
 }

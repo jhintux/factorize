@@ -17,6 +17,7 @@ import {
   getBase64EncodedWireTransaction,
   getSignatureFromTransaction,
 } from "@solana/transactions";
+import { withRpcRetry } from "./rpcRetry";
 
 type SendInstructionParams = {
   rpc: Rpc<SolanaRpcApi>;
@@ -34,7 +35,9 @@ export async function buildProgramTransactionMessage({
   signer,
   instruction,
 }: SendInstructionParams) {
-  const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+  const { value: latestBlockhash } = await withRpcRetry(() =>
+    rpc.getLatestBlockhash().send(),
+  );
 
   return pipe(
     createTransactionMessage({ version: 0 }),
@@ -88,13 +91,15 @@ export async function simulateThenSendInstruction({
     await signTransactionMessageWithSigners(transactionMessage);
   const wireTx = getBase64EncodedWireTransaction(signedTransaction);
 
-  const { value: simulation } = await rpc
-    .simulateTransaction(wireTx, {
-      encoding: "base64",
-      sigVerify: false,
-      replaceRecentBlockhash: true,
-    })
-    .send();
+  const { value: simulation } = await withRpcRetry(() =>
+    rpc
+      .simulateTransaction(wireTx, {
+        encoding: "base64",
+        sigVerify: false,
+        replaceRecentBlockhash: true,
+      })
+      .send(),
+  );
 
   if (simulation.err) {
     const logs = simulation.logs?.join("\n") ?? "";
@@ -114,12 +119,14 @@ export async function sendSignedProgramTransactionMessage(
     await signTransactionMessageWithSigners(transactionMessage);
   const signature = getSignatureFromTransaction(signedTransaction);
 
-  await rpc
-    .sendTransaction(getBase64EncodedWireTransaction(signedTransaction), {
-      preflightCommitment: "confirmed",
-      encoding: "base64",
-    })
-    .send();
+  await withRpcRetry(() =>
+    rpc
+      .sendTransaction(getBase64EncodedWireTransaction(signedTransaction), {
+        preflightCommitment: "confirmed",
+        encoding: "base64",
+      })
+      .send(),
+  );
 
   return signature;
 }
