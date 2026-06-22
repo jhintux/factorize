@@ -68,11 +68,14 @@
   },
   "landing": {
     "brand": "Factorize",
+    "demo": "Demo",
     "login": "Log in",
     "register": "Register",
     "hero": "Earn yield on verified SME receivables",
+    "hero2": "Turn your accounts receivable into cash",
     "statDeposits": "$2.4M deposited",
     "statInvestors": "180+ investors",
+    "statsSme": "+5.7k SMEs",
     "statDefault": "<1% default rate"
   },
   "sme": {

@@ -1,4 +1,5 @@
 import { Box } from "@chakra-ui/react";
+import "./globals.css";
 import ParaWalletProvider from "./providers/ParaWallet";
 import ChakraUIProvider from "./providers/ChakraUI";
 

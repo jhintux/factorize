@@ -8,5 +8,5 @@ export default async function Page({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <LandingPage locale={locale} />;
+  return <LandingPage locale={locale} showLocaleSwitcher />;
 }

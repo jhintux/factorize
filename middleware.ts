@@ -25,11 +25,7 @@ function hasSession(request: NextRequest): boolean {
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname === "/") {
-    return NextResponse.redirect(new URL("/demo", request.url));
-  }
-
-  if (pathname === "/demo" || pathname.startsWith("/demo/")) {
+  if (pathname === "/" || pathname === "/demo" || pathname.startsWith("/demo/")) {
     return NextResponse.next();
   }
 
