@@ -38,6 +38,31 @@ function HistoryIcon() {
 
 export { HistoryIcon };
 
+type CachedInvoiceLogs =
+  | { status: "success"; logs: DemoInvoiceLogEntry[] }
+  | { status: "error"; error: string };
+
+const invoiceLogsSessionCache = new Map<string, CachedInvoiceLogs>();
+
+function getCachedInvoiceLogs(invoiceId: string): CachedInvoiceLogs | undefined {
+  return invoiceLogsSessionCache.get(invoiceId);
+}
+
+function setCachedInvoiceLogs(invoiceId: string, entry: CachedInvoiceLogs) {
+  invoiceLogsSessionCache.set(invoiceId, entry);
+}
+
+function getInitialLogState(invoiceId: string) {
+  const cached = getCachedInvoiceLogs(invoiceId);
+  if (!cached) {
+    return { logs: [] as DemoInvoiceLogEntry[], loading: true, error: null as string | null };
+  }
+  if (cached.status === "error") {
+    return { logs: [] as DemoInvoiceLogEntry[], loading: false, error: cached.error };
+  }
+  return { logs: cached.logs, loading: false, error: null as string | null };
+}
+
 export function DemoInvoiceHistoryDialog({
   invoice,
   open,
@@ -47,12 +72,31 @@ export function DemoInvoiceHistoryDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  const [logs, setLogs] = useState<DemoInvoiceLogEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [logs, setLogs] = useState(
+    () => getInitialLogState(invoice.id).logs,
+  );
+  const [loading, setLoading] = useState(
+    () => getInitialLogState(invoice.id).loading,
+  );
+  const [error, setError] = useState<string | null>(
+    () => getInitialLogState(invoice.id).error,
+  );
 
   useEffect(() => {
     if (!open) return;
+
+    const cached = getCachedInvoiceLogs(invoice.id);
+    if (cached) {
+      if (cached.status === "error") {
+        setError(cached.error);
+        setLogs([]);
+      } else {
+        setLogs(cached.logs);
+        setError(null);
+      }
+      setLoading(false);
+      return;
+    }
 
     let cancelled = false;
     setLoading(true);
@@ -61,9 +105,11 @@ export function DemoInvoiceHistoryDialog({
     void getDemoInvoiceLogs(invoice.id).then((result) => {
       if (cancelled) return;
       if (result.ok === false) {
+        setCachedInvoiceLogs(invoice.id, { status: "error", error: result.error });
         setError(result.error);
         setLogs([]);
       } else {
+        setCachedInvoiceLogs(invoice.id, { status: "success", logs: result.logs });
         setLogs(result.logs);
       }
       setLoading(false);
